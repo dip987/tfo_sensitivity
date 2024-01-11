@@ -2,7 +2,7 @@
 Contains formuale definitions of Jacobians
 """
 from typing import Literal, Optional
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 import pandas as pd
 from numpy import log10
 from tfo_sensitivity.calculate_intensity.photon_manipulation import generate_intensity
@@ -13,8 +13,7 @@ from tfo_sensitivity.jacobian.mu_a_equations import JacobianMuAEqn, FullBloodJac
 DxTypes = Literal["MC", "MS", "FC", "FS"]
 
 
-
-class JacobianCalculator:
+class NumericalJacobianCalculator(ABC):
     """Abstract class to define how to calculate the Jacobian"""
 
     def __init__(
@@ -76,7 +75,7 @@ class JacobianCalculator:
         pass
 
 
-class NormalizedDerivative(JacobianCalculator):
+class NormalizedDerivative(NumericalJacobianCalculator):
     """Calculate the partial normalized derivative from a given simulation raw data set. Uses the
     formula (I(x + delta) - I(x - delta))/I(x)/2/delta)
     """
@@ -92,7 +91,7 @@ class NormalizedDerivative(JacobianCalculator):
         Uses the formula (I(x + delta) - I(x - delta))/I(x)/2/delta)"""
 
 
-class RegularDerivative(JacobianCalculator):
+class RegularDerivative(NumericalJacobianCalculator):
     """Calculate a regular derivative with the formula
     (I(x + delta) - I(x - delta))/2/delta)
     """
@@ -107,7 +106,7 @@ class RegularDerivative(JacobianCalculator):
         (I(x + delta) - I(x - delta))/2/delta)"""
 
 
-class LogDerivative(JacobianCalculator):
+class LogDerivative(NumericalJacobianCalculator):
     """Calculate a regular derivative with the formula
     (log(I(x + delta)) - log(I(x - delta)))/2/delta)
     """

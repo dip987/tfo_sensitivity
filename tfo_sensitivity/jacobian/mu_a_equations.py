@@ -8,6 +8,9 @@ from inverse_modelling_tfo.tools.optical_properties import get_tissue_mu_a
 
 
 class JacobianMuAEqn(ABC):
+    """
+    Base class for calculating the mu_a for the Jacobian calculation
+    """
     @abstractmethod
     def derivative_mu_map_gen(
         self, base_mu_map, maternal_sat, maternal_hb, fetal_sat, fetal_hb, wave_int, dx, delta
