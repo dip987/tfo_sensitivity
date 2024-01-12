@@ -1,7 +1,7 @@
 """
 Contains formuale definitions of Jacobians (in Analytical Domain)
 """
-from typing import Literal, Optional, Tuple, List
+from typing import Literal, Optional, Tuple
 from abc import ABC, abstractmethod
 import pandas as pd
 import numpy as np
@@ -24,7 +24,6 @@ class AnalyticalJacobianCalculator(ABC):
         sdd_index: Optional[int],
         base_mu_map: dict,
         dx: DxTypes,
-        sdd_list: Optional[List],
         maternal_hb: float,
         maternal_sat: float,
         fetal_hb: float,
@@ -34,12 +33,13 @@ class AnalyticalJacobianCalculator(ABC):
         normalize_derivative: bool = True,
     ) -> None:
         """
-        Abstract class to define how to calculate the Jacobian. Each implementation comes with its own set of
-        equations to calculate different types of partial derivatives(i.e., Jacboians)
+        Abstract class to define how to calculate the Jacobian(on a single detector). Each implementation comes with its
+        own set of equations to calculate different types of partial derivatives(i.e., Jacboians)
 
         Args:
             filtered_photon_data (pd.DataFrame): Raw photon data(should include partial paths at each layer and SDD)
-            sdd_index (Optional[int]): Index of the SDD to use
+            sdd_index (Optional[int]): Index of the SDD to use (Used for detector count normalization, pass None to 
+            skip normalization)
             base_mu_map (dict): Base mu map to use (mu_map for the non_pulsatile layers)
             dx (DxTypes): What type of partial differential to calculate
             sdd_list (Optional[List]): List of all SDD distances
@@ -55,7 +55,6 @@ class AnalyticalJacobianCalculator(ABC):
         self.filtered_photon_data = filtered_photon_data
         self.sdd_index = sdd_index
         self.dx = dx
-        self.sdd_list = sdd_list
         self.base_mu_map = base_mu_map
         self.maternal_hb = maternal_hb
         self.maternal_sat = maternal_sat
@@ -117,7 +116,7 @@ class FullBloodAnalyticalJC(AnalyticalJacobianCalculator):
         """
         intensity_column = generate_intensity_column(self.filtered_photon_data, self.mu_map, self.sdd_index)
         pathlength_column = self.filtered_photon_data["L4 ppath"].to_numpy()
-        analytical_term = self.eps * np.dot(pathlength_column, intensity_column)
+        analytical_term = - self.eps * np.dot(pathlength_column, intensity_column)
         if self.normalize_derivative:
             analytical_term /= np.sum(intensity_column)
         return analytical_term
@@ -131,6 +130,9 @@ class FullBloodAnalyticalJC(AnalyticalJacobianCalculator):
         return analytical_term
 
     def calculate_jacobian(self) -> float:
+        # Update these values before calculating the jacobian
+        self._modify_mu_map()
+        self.eps, self.eps_hbo, self.eps_hhb = self._calculate_eps()
         dx_to_func_mapping = {
             "FC": self._fetal_conc_derivative,
             "FS": self._fetal_sat_derivative,
@@ -156,7 +158,6 @@ class PartialBloodAnalyticalJC(AnalyticalJacobianCalculator):
         sdd_index: Optional[int],
         base_mu_map: dict,
         dx: DxTypes,
-        sdd_list: Optional[List],
         maternal_hb: float,
         maternal_sat: float,
         fetal_hb: float,
@@ -173,7 +174,6 @@ class PartialBloodAnalyticalJC(AnalyticalJacobianCalculator):
             sdd_index,
             base_mu_map,
             dx,
-            sdd_list,
             maternal_hb,
             maternal_sat,
             fetal_hb,
@@ -197,7 +197,7 @@ class PartialBloodAnalyticalJC(AnalyticalJacobianCalculator):
         pathlength_column = self.filtered_photon_data["L4 ppath"].to_numpy()
         eps_at_venous_sat = get_mu_a(self.fetal_sat * self.venous_saturation_reduction_factor, 1, self.wave_int)
         del_mu_del_cf = self.arterial_volume_fraction * (self.eps + eps_at_venous_sat)
-        analytical_term = del_mu_del_cf * np.dot(pathlength_column, intensity_column)
+        analytical_term = - del_mu_del_cf * np.dot(pathlength_column, intensity_column)
         if self.normalize_derivative:
             analytical_term /= np.sum(intensity_column)
         return analytical_term
@@ -217,9 +217,14 @@ class PartialBloodAnalyticalJC(AnalyticalJacobianCalculator):
         return analytical_term
 
     def calculate_jacobian(self) -> float:
+        # Update these values before calculating the jacobian
+        self._modify_mu_map()
+        self.eps, self.eps_hbo, self.eps_hhb = self._calculate_eps()
+        
         dx_to_func_mapping = {
             "FC": self._fetal_conc_derivative,
             "FS": self._fetal_sat_derivative,
         }
         function_to_use = dx_to_func_mapping.get(self.dx, self._not_implemented)
         return function_to_use()
+
