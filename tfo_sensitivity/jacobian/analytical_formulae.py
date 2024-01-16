@@ -147,7 +147,8 @@ class PartialBloodAnalyticalJC(AnalyticalJacobianCalculator):
 
     Note: This assumes arterial and venous blood are the same. (This makes the equations simpler)
     Additional Args:
-        arterial_volume_fraction (float): Fraction of the tissue that is filled with arterial blood
+        arterial_volume_fraction (float): Fraction of the tissue that is filled with arterial blood. Assumes the venous
+        fraction is also the same 
         venous_saturation_reduction_factor (float): What fraction is the venous saturation comparted to (arterial) 
         saturation
     """
