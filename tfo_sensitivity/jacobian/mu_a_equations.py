@@ -1,32 +1,9 @@
 """
 Mixins to calculate tissue absorption coefficient changes used in Jacobian calculations
 """
-from abc import ABC, abstractmethod
-from typing import List
 from inverse_modelling_tfo.tools.s_based_intensity_datagen import get_mu_a
 from inverse_modelling_tfo.tools.optical_properties import get_tissue_mu_a
-
-
-class JacobianMuAEqn(ABC):
-    """
-    Base class for calculating the mu_a for the Jacobian calculation
-    """
-
-    @abstractmethod
-    def derivative_mu_map_gen(
-        self, base_mu_map, maternal_sat, maternal_hb, fetal_sat, fetal_hb, wave_int, dx, delta
-    ) -> List:
-        """
-        Creates three mu maps for calculating intensity derivatives. The first one is the base map
-        modified with the properties passed in. The second on adds a postive change of delta to mu
-        affected by dx and the third one adds a negative change of delta.
-        """
-
-    @abstractmethod
-    def __str__(self) -> str:
-        """
-        A description of how the mu_a is calculated
-        """
+from .base import JacobianMuAEqn
 
 
 class FullBloodJacobianMuAEqn(JacobianMuAEqn):

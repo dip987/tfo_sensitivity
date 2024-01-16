@@ -1,47 +1,57 @@
 """
 Contains formuale definitions of Jacobians
 """
-from typing import Literal, Optional
+from typing import Dict, Literal, Optional
 from abc import abstractmethod, ABC
 import pandas as pd
 from numpy import log10
 from tfo_sensitivity.calculate_intensity.photon_manipulation import generate_intensity
 from tfo_sensitivity.jacobian.mu_a_equations import JacobianMuAEqn, FullBloodJacobianMuAEqn
+from .base import JacobianCalculator, DxTypes, OperatingPoint
 
 
-# Types: M: Maternal, F: Fetal, C: Delta in concentration, S: Delta in saturation
-DxTypes = Literal["MC", "MS", "FC", "FS"]
+class NumericalJacobianCalculator(JacobianCalculator, ABC):
+    """
+    Abstract class for calculating the Jacobian(on a single detector) in a numerical way
 
-
-class NumericalJacobianCalculator(ABC):
-    """Abstract class to define how to calculate the Jacobian"""
+    Args:
+        filtered_photon_data (pd.DataFrame): Raw photon data(should include partial paths at each layer and SDD)
+        sdd_index (Optional[int]): Index of the SDD to use (Used for detector count normalization, pass None to
+        skip normalization)
+        base_mu_map (dict): Base mu map to use (mu_map for the non_pulsatile layers)
+        dx (DxTypes): What type of partial differential to calculate
+        operating_point (OperatingPoint): Operating point to use for calculating the Jacobian
+        mu_a_eqn (Optional[JacobianMuAEqn], optional): Which equation to use for calculating mu_a for the fetal
+        and maternal layers(Layer 1 and 4. Layer number is hardcoded). Defaults to None.
+        delta (float, optional): How much to change the values during calculating derivatives. Defaults to 0.0001.
+    """
 
     def __init__(
         self,
         filtered_photon_data: pd.DataFrame,
+        operating_point: OperatingPoint,
         sdd_index: Optional[int],
         base_mu_map: dict,
-        delta: float,
         dx: DxTypes,
-        sdd_list: Optional[list],
-        maternal_hb: float,
-        maternal_sat: float,
-        fetal_hb: float,
-        fetal_sat: float,
-        wave_int: int,
         mu_a_eqn: Optional[JacobianMuAEqn] = None,
+        delta: float = 0.0001,
     ) -> None:
-        self.filtered_photon_data = filtered_photon_data
-        self.sdd_index = sdd_index
-        self.base_mu_map = base_mu_map
+        super().__init__(
+            filtered_photon_data,
+            operating_point,
+            sdd_index,
+            base_mu_map,
+            dx,
+            mu_a_eqn,
+        )
         self.delta = delta
-        self.dx = dx
-        self.sdd_list = sdd_list
-        self.maternal_hb = maternal_hb
-        self.maternal_sat = maternal_sat
-        self.fetal_hb = fetal_hb
-        self.fetal_sat = fetal_sat
-        self.wave_int = wave_int
+        # Extract the operating point values and save them individually
+        self.maternal_hb = operating_point.maternal_hb
+        self.maternal_sat = operating_point.maternal_sat
+        self.fetal_hb = operating_point.fetal_hb
+        self.fetal_sat = operating_point.fetal_sat
+        self.wave_int = operating_point.wave_int
+        # Create the mu maps for numerical derivatives
         self.mu_map = None
         self.mu_map1 = None
         self.mu_map2 = None
@@ -121,11 +131,12 @@ class LogDerivative(NumericalJacobianCalculator):
         (log(I(x + delta)) - log(I(x - delta)))/2/delta)"""
 
 
+derivative_mapping: Dict[str, NumericalJacobianCalculator]
 derivative_mapping = {"regular": RegularDerivative, "norm_der": NormalizedDerivative, "log": LogDerivative}
 DerivativeTypes = Literal["regular", "norm_der", "log"]
 
 
-def calculate_jacobian(
+def calculate_jacobian_numerical(
     derivative_format: DerivativeTypes,
     photon_data: pd.DataFrame,
     sdd_index: int,
@@ -165,17 +176,15 @@ def calculate_jacobian(
         sdd_list = photon_data["SDD"].unique()
     sdd = sdd_list[sdd_index]
     filtered_photon_data = photon_data[photon_data["SDD"] == sdd]
+    operating_point = OperatingPoint(
+        maternal_hb=maternal_hb,
+        maternal_sat=maternal_sat,
+        fetal_hb=fetal_hb,
+        fetal_sat=fetal_sat,
+        wave_int=wave_int,
+    )
+
     jacobian_calculator = derivative_mapping[derivative_format](
-        filtered_photon_data,
-        sdd_index,
-        base_mu_map,
-        delta,
-        dx,
-        sdd_list,
-        maternal_hb,
-        maternal_sat,
-        fetal_hb,
-        fetal_sat,
-        wave_int,
+        filtered_photon_data, operating_point, sdd_index, base_mu_map, delta, dx
     )
     return jacobian_calculator.calculate_jacobian()
