@@ -24,6 +24,10 @@ class NumericalJacobianCalculator(JacobianCalculator, ABC):
         mu_a_eqn (Optional[JacobianMuAEqn], optional): Which equation to use for calculating mu_a for the fetal
         and maternal layers(Layer 1 and 4. Layer number is hardcoded). Defaults to None.
         delta (float, optional): How much to change the values during calculating derivatives. Defaults to 0.0001.
+    Internal Varibles:
+        mu_map (dict): mu map for the current operating point
+        mu_map1 (dict): mu map for the current operating point with a positive change in the dx
+        mu_map2 (dict): mu map for the current operating point with a negative change in the dx
     """
 
     def __init__(
@@ -91,10 +95,10 @@ class NormalizedDerivative(NumericalJacobianCalculator):
     """
 
     def calculate_jacobian(self) -> float:
-        I1 = generate_intensity(self.filtered_photon_data, self.mu_map1, self.sdd_index)
-        I2 = generate_intensity(self.filtered_photon_data, self.mu_map2, self.sdd_index)
-        I0 = generate_intensity(self.filtered_photon_data, self.mu_map, self.sdd_index)
-        return (I1 - I2) / I0 / (2 * self.delta)
+        intensity1 = generate_intensity(self.filtered_photon_data, self.mu_map1, self.sdd_index)
+        intensity2 = generate_intensity(self.filtered_photon_data, self.mu_map2, self.sdd_index)
+        intensity0 = generate_intensity(self.filtered_photon_data, self.mu_map, self.sdd_index)
+        return (intensity1 - intensity2) / intensity0 / (2 * self.delta)
 
     def __str__(self) -> str:
         return """Calculate the partial normalized derivative from a given simulation raw data set
@@ -107,9 +111,9 @@ class RegularDerivative(NumericalJacobianCalculator):
     """
 
     def calculate_jacobian(self) -> float:
-        I1 = generate_intensity(self.filtered_photon_data, self.mu_map1, self.sdd_index)
-        I2 = generate_intensity(self.filtered_photon_data, self.mu_map2, self.sdd_index)
-        return (I1 - I2) / (2 * self.delta)
+        intensity1 = generate_intensity(self.filtered_photon_data, self.mu_map1, self.sdd_index)
+        intensity2 = generate_intensity(self.filtered_photon_data, self.mu_map2, self.sdd_index)
+        return (intensity1 - intensity2) / (2 * self.delta)
 
     def __str__(self) -> str:
         return """Calculate a regular derivative with the formula
@@ -122,9 +126,9 @@ class LogDerivative(NumericalJacobianCalculator):
     """
 
     def calculate_jacobian(self) -> float:
-        I1 = generate_intensity(self.filtered_photon_data, self.mu_map1, self.sdd_index)
-        I2 = generate_intensity(self.filtered_photon_data, self.mu_map2, self.sdd_index)
-        return (log10(I1) - log10(I2)) / (2 * self.delta)
+        intensity1 = generate_intensity(self.filtered_photon_data, self.mu_map1, self.sdd_index)
+        intensity2 = generate_intensity(self.filtered_photon_data, self.mu_map2, self.sdd_index)
+        return (log10(intensity1) - log10(intensity2)) / (2 * self.delta)
 
     def __str__(self) -> str:
         return """Calculate a regular derivative with the formula
@@ -134,6 +138,33 @@ class LogDerivative(NumericalJacobianCalculator):
 derivative_mapping: Dict[str, NumericalJacobianCalculator]
 derivative_mapping = {"regular": RegularDerivative, "norm_der": NormalizedDerivative, "log": LogDerivative}
 DerivativeTypes = Literal["regular", "norm_der", "log"]
+
+
+class MuANumericalJC(NumericalJacobianCalculator):
+    """
+    Numerically calculate the del mu_a / del dx.
+    Uses the 3 point derivative formula (I(x + delta) - I(x - delta))/2/delta)
+    """
+
+    def __init__(
+        self,
+        operating_point: OperatingPoint,
+        dx: DxTypes,
+        mu_a_eqn: Optional[JacobianMuAEqn] = None,
+        delta: float = 0.0001,
+    ) -> None:
+        # Fill up the super class with dummy values. These do not impact our calculations
+        fake_base_mu_map = {1: 0.0, 2: 0.0, 3: 0.0, 4: 0.0}
+        super().__init__(pd.DataFrame(), operating_point, None, fake_base_mu_map, dx, mu_a_eqn, delta)
+
+    def calculate_jacobian(self) -> float:
+        mu1 = self.mu_map1[1] if "M" in self.dx else self.mu_map1[4]
+        mu2 = self.mu_map2[1] if "M" in self.dx else self.mu_map2[4]
+        return (mu1 - mu2) / (2 * self.delta)
+
+    def __str__(self) -> str:
+        return """Calculate the partial derivative of mu_a from a given simulation raw data set
+        Uses the formula (I(x + delta) - I(x - delta))/2/delta)"""
 
 
 def calculate_jacobian_numerical(

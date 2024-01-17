@@ -6,6 +6,7 @@ from .numerical_formulae import (
     NormalizedDerivative,
     RegularDerivative,
     LogDerivative,
+    MuANumericalJC,
     NumericalJacobianCalculator,
 )
 from .mu_a_equations import FullBloodJacobianMuAEqn, PartialBloodJacobianMuAEqn
@@ -17,6 +18,7 @@ __all__ = [
     "NormalizedDerivative",
     "RegularDerivative",
     "LogDerivative",
+    "MuANumericalJC",
     "NumericalJacobianCalculator",
     "FullBloodJacobianMuAEqn",
     "PartialBloodJacobianMuAEqn",
