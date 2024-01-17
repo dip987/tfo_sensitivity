@@ -70,14 +70,7 @@ class NumericalJacobianCalculator(JacobianCalculator, ABC):
         affected by dx and the third one adds a negative change of delta.
         """
         self.mu_map, self.mu_map1, self.mu_map2 = self.mu_a_eqn.derivative_mu_map_gen(
-            self.base_mu_map,
-            self.maternal_sat,
-            self.maternal_hb,
-            self.fetal_sat,
-            self.fetal_hb,
-            self.wave_int,
-            self.dx,
-            self.delta,
+            self.base_mu_map, self.operating_point, self.dx, self.delta
         )
 
     @abstractmethod

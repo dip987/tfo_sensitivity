@@ -57,6 +57,7 @@ class AnalyticalJacobianCalculator(JacobianCalculator, ABC):
         self.mu_map = base_mu_map.copy()  # mu_map to use - will be modified by the mu_a_eqn
         if mu_a_eqn is None:
             mu_a_eqn = FullBloodJacobianMuAEqn()
+        self.mu_a_eqn = mu_a_eqn
         self.normalize_derivative = normalize_derivative
 
         # Call initiation functions
@@ -67,16 +68,7 @@ class AnalyticalJacobianCalculator(JacobianCalculator, ABC):
         """
         Modify the the mu_map with the given maternal & fetal parameters
         """
-        self.mu_map, _, __ = self.mu_a_eqn.derivative_mu_map_gen(
-            self.base_mu_map,
-            self.maternal_sat,
-            self.maternal_hb,
-            self.fetal_sat,
-            self.fetal_hb,
-            self.wave_int,
-            self.dx,
-            0.001,  # delta does not matter - we only use the non-delta'd mu_map
-        )
+        self.mu_map = self.mu_a_eqn.get_mu_map(self.base_mu_map, self.operating_point)
 
     def _calculate_eps(self) -> Tuple[float]:
         """

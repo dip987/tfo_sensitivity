@@ -3,7 +3,7 @@ Base classes used for Jacobian calculations
 """
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
-from typing import Optional, Literal, List
+from typing import Dict, Optional, Literal, List
 import pandas as pd
 
 # Types: M: Maternal, F: Fetal, C: Delta in concentration, S: Delta in saturation
@@ -37,12 +37,25 @@ class JacobianMuAEqn(ABC):
 
     @abstractmethod
     def derivative_mu_map_gen(
-        self, base_mu_map, maternal_sat, maternal_hb, fetal_sat, fetal_hb, wave_int, dx, delta
+        self, base_mu_map: Dict[int, float], operating_point: OperatingPoint, dx: DxTypes, delta: float
     ) -> List:
         """
         Creates three mu maps for calculating intensity derivatives. The first one is the base map
         modified with the properties passed in. The second on adds a postive change of delta to mu
         affected by dx and the third one adds a negative change of delta.
+        """
+
+    @abstractmethod
+    def get_mu_map(self, base_mu_map: Dict[int, float], operating_point: OperatingPoint) -> Dict[int, float]:
+        """
+        Modifiy the mu_a of the base_mu_map based on the operating point
+
+        Args:
+            base_mu_map (Dict[int, float]): Base mu map (key: layer, value: mu_a)
+            operating_point (OperatingPoint): Operating point
+
+        Returns:
+            Dict[int, float]: Modified base mu map
         """
 
     @abstractmethod
