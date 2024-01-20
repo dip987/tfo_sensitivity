@@ -68,7 +68,7 @@ Sensitivity_{filtered} = \frac{\int_{L_1}^{L_2} I(L) |log(R(L))| d(L)} {\int{L_1
 ## Optimizing Sensitivity
 Our ToF filtering optimization goal now becomes,
 ```math
-L_1, L_2 = argmax_{L_1, L_2} \frac{\int_{L_1}^{L_2} I(L) |log(R(L))| d(L)} {\int{L_1}^{L_2} I(L) d(L)} 
+L_1, L_2 = argmax_{L_1, L_2} \frac{\int_{L_1}^{L_2} I(L) |log(R(L))| d(L)} {\int_{L_1}^{L_2} I(L) d(L)} 
 ```
 
 ## Optimization Comments
