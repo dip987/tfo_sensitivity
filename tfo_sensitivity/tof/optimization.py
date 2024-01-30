@@ -2,6 +2,7 @@
 Optimizing the ToF based on some constraints
 """
 from typing import Callable, Literal, Tuple
+import numpy as np
 
 
 def two_pointer_discrete_optimize(
@@ -54,3 +55,38 @@ def two_pointer_discrete_optimize(
             break
 
     return left_pointer, right_pointer, optimum_value
+
+
+def two_pointer_brute_force_optimize(
+    target_func: Callable[[int, int], float],
+    left_pointer_init: int,
+    right_pointer_init: int,
+    optima_type: Literal["max", "min"] = "max",
+) -> Tuple[int, int, float]:
+    """
+    Use two pointers to optimize the target function by brute forcing over all possible combinations.
+    (This assumes that the left_pointer will always be less than or equal to right_pointer)
+
+    Args:
+        target_func (Callable[[int, int], float]): Optimization function
+        left_pointer_init (int): Starting value(left)
+        right_pointer_init (int): Starting value(right)
+        optima_type (Literal[&quot;max&quot;, &quot;min&quot;], optional): Defaults to "max".
+
+    Returns:
+        Tuple[int, int, float]:
+    """
+    # initialize brute force
+    data_matrix = np.full(
+        (right_pointer_init - left_pointer_init + 1, right_pointer_init - left_pointer_init + 1), np.nan
+    )
+    for i in range(left_pointer_init, right_pointer_init + 1):
+        for j in range(i, right_pointer_init + 1):
+            data_matrix[i - left_pointer_init, j - left_pointer_init] = target_func(i, j)
+
+    optima_func = np.nanmax if optima_type == "max" else np.nanmin
+    optima_argfunc = np.nanargmax if optima_type == "max" else np.nanargmin
+    left, right = np.unravel_index(optima_argfunc(data_matrix), data_matrix.shape)
+    left += left_pointer_init
+    right += left_pointer_init
+    return left, right, optima_func(data_matrix)

@@ -1,8 +1,9 @@
 from pathlib import Path
 import unittest
 import pandas as pd
+import numpy as np
 from tfo_sensitivity.tof.base import ToF
-from tfo_sensitivity.tof.optimization import two_pointer_discrete_optimize
+from tfo_sensitivity.tof.optimization import two_pointer_discrete_optimize, two_pointer_brute_force_optimize
 
 MU_MAP = {1: 0.1, 2: 0.2, 3: 0.3, 4: 0.4}
 TIME_RES = 2e-13
@@ -93,6 +94,34 @@ class OptimizationTest(unittest.TestCase):
         self.assertEqual(left, 1)
         self.assertEqual(right, 3)
         self.assertEqual(optimum, self.data2.iloc[1:-1].sum())
+
+    def test_two_pointer_brute_force_max(self):
+        dummy_data = np.zeros((20, 20))
+        max_x, max_y = 5, 7
+        max_value = 1.0
+        dummy_data[max_x, max_y] = max_value
+
+        def target_func(x, y):
+            return dummy_data[x, y]
+
+        left, right, optimum = two_pointer_brute_force_optimize(target_func, 0, 19, "max")
+        self.assertEqual(left, max_x)
+        self.assertEqual(right, max_y)
+        self.assertEqual(optimum, max_value)
+
+    def test_two_pointer_brute_force_min(self):
+        dummy_data = np.zeros((20, 20))
+        min_x, min_y = 5, 7
+        min_value = -1.0
+        dummy_data[min_x, min_y] = min_value
+
+        def target_func(x, y):
+            return dummy_data[x, y]
+
+        left, right, optimum = two_pointer_brute_force_optimize(target_func, 0, 19, "min")
+        self.assertEqual(left, min_x)
+        self.assertEqual(right, min_y)
+        self.assertEqual(optimum, min_value)
 
 
 if __name__ == "__main__":
