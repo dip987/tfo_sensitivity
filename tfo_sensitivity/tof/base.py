@@ -36,8 +36,11 @@ class ToF:
         temp_data = photon_data.copy()
         temp_data["Intensity"] = generate_intensity_column(temp_data, mu_map, sdd_index)
         temp_data["ToF_quantized"] = self._quantize_tof(self._calculate_tof(temp_data), time_resolution)
+        self.photon_count_per_bin = temp_data.groupby("ToF_quantized", sort=True)["Intensity"].count()
         self.data = temp_data.groupby("ToF_quantized", sort=True)["Intensity"].sum()
-        self.data = self.data.loc[self.data > lower_intensity_bound]  # Remove zero intensity bins
+        # Remove low intensity bins
+        self.photon_count_per_bin = self.photon_count_per_bin.loc[self.data > lower_intensity_bound]
+        self.data = self.data.loc[self.data > lower_intensity_bound]  
         self.interpolation_needed = False
         self.lower_bin_index = self.data.index.values.min()
         self.upper_bin_index = self.data.index.values.max()
@@ -127,9 +130,13 @@ class ToF:
         expected_length = upper_limit - lower_limit
         if len(self.data) < expected_length:
             self.data = self.data.reindex(range(lower_limit, upper_limit))
+            self.photon_count_per_bin = self.photon_count_per_bin.reindex(range(lower_limit, upper_limit))
             self.data = np.log(self.data)
+            self.photon_count_per_bin = np.log(self.photon_count_per_bin)
             self.data = self.data.interpolate(method="linear", limit_direction="both")
+            self.photon_count_per_bin = self.photon_count_per_bin.interpolate(method="linear", limit_direction="both")
             self.data = np.exp(self.data)
+            self.photon_count_per_bin = np.exp(self.photon_count_per_bin)
             self.interpolation_needed = True
 
     def check_operation_compatibility(self, other) -> bool:

@@ -6,7 +6,7 @@ from tfo_sensitivity.tof.base import ToF
 from tfo_sensitivity.tof.optimization import two_pointer_discrete_optimize, two_pointer_brute_force_optimize
 
 MU_MAP = {1: 0.1, 2: 0.2, 3: 0.3, 4: 0.4}
-TIME_RES = 2e-13
+TIME_RES = 2e-10
 
 
 class ToFTest(unittest.TestCase):
@@ -59,6 +59,10 @@ class ToFTest(unittest.TestCase):
         tof2 = ToF.from_data(data2, 3e-9)
         self.assertTrue(tof1.check_operation_compatibility(tof1))
         self.assertFalse(tof1.check_operation_compatibility(tof2))
+    
+    def test_tof_photon_count_per_bin(self):
+        self.assertTrue(len(self.tof.photon_count_per_bin) == len(self.tof.data), "Should be of the same length")
+        self.assertTrue(all(self.tof.photon_count_per_bin > 0), "All values should be greater than 0")
 
 
 class OptimizationTest(unittest.TestCase):
