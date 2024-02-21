@@ -8,7 +8,8 @@ SNR = \int_{L_{min}}^{L_{max}} I(L)dL
 Where, $L_{min}$ and $L_{max}$ are the limits of the iNIRS timebins chosen for obtaining a fetal signal. We also assume a rectangular window during this summing process for now.  
 
 # Heatmaps
-We used heatmaps to visualize the optimum summing window. We place the summing window upper limit's index along the X-axis and the lower limit along Y. The optimization term is represented using a colored pixel at its corresponding XY co-ordinate. 
+We used heatmaps to visualize the optimum summing window. We place the summing window upper limit's index along the X-axis and the lower limit along Y. The optimization term is represented using a colored pixel at its corresponding XY co-ordinate. For example, here's a heatmap of just the Sensitivity without considering any SNR   
+![Heatmap1](figures/heatmap_snr1.png)  
 
 # Genrating ToF
 ToF is generated from MC similation data under the following conditions.
@@ -39,9 +40,9 @@ We actually get two windows. These are between 0 to 73 and at 127 to 127.
 Beyond some threshold SNR, it does not matter if we increase SNR any more. Setting this to 20% of the max possible SNR : 
 ![Heatmap3](figures/heatmap_snr4.png)    
 Optimum window indices 1 to 94   
-Setting it to 80%
+Setting it to 80%  
 ![Heatmap4](figures/heatmap_snr5.png)    
 Optima between 0 to 103  
-Setting it to 5%
+Setting it to 5%  
 ![Heatmap2](figures/heatmap_snr6.png)   
 Optima between 2 to 97
