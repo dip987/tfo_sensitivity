@@ -1,21 +1,47 @@
-# Finding Out A Term Analogous to SNR in Simulation
-SNR is an important term in maximizing sensitivity. In a noiseless setup, maximizing fetal sensitivity is analogous to always choosing the last possible, singular timebin. However, this bin would be riddled with noise in a real setup. Appending more bins to the left would bring a reduction in noise at the cost of sensitivity. The interest thus lies in optimizing both SNR & Sensitivity simultaneously. In this report, we try to investigate what term could be a proxy for SNR that can be obtained from simulation data. 
+# Maazimizing iNIRS Fetal Sensitivity & SNR Simultaneously
+The fetal sensitivity of iNIRS depends on strategically choosing a range of timebins, whose intensities will then be summed up to produce the fetal signal. In a noiseless setup, which is provided from our MC simulations, maximizing fetal sensitivity is analogous to choosing only the very last timebin. However, in practical setup, this bin would be riddled with noise. Appending earlier timebin would reduce noise but it would degrade fetal sensitivity. In this report, we try to investigate which singular term could act as a proxy for optmizing both terms concurrently. Our goal is to device a way to pull the optimum summing window towards earlier timebins.  
+
+__NOTE__: The definition of SNR we use here is: Received photon count at the sample arm. In terms of simulation, we would need to replace photon count with intensity.
+```math
+SNR = \int_{L_{min}}^{L_{max}} I(L)dL
+```
+Where, $L_{min}$ and $L_{max}$ are the limits of the iNIRS timebins chosen for obtaining a fetal signal. We also assume a rectangular window during this summing process for now.  
+
+# Heatmaps
+We used heatmaps to visualize the optimum summing window. We place the summing window upper limit's index along the X-axis and the lower limit along Y. The optimization term is represented using a colored pixel at its corresponding XY co-ordinate. 
+
+# Genrating ToF
+ToF is generated from MC similation data under the following conditions.
+1. Speed of light is assumed to be $c/1.4$ across the entire tissue model
+2. There is no shot noise
+3. Each ToF timebin has a resolution of 0.2 ns
+4. ToF intensities are normalized to unit source intensity
+5. Flat 4-Layered tissue model
+6. Detector at 1.5cm, circular shape, 2mm radius
+7. 850nm wavelength, 1cm fetal depth, 100% maternal saturation, 50% fetal saturation, maternal and fetal Hb concentration both at 11 g/dL, delta in R  0.01 g/dL, maternal and fetal blood volume fraction 10%
 
 
-## Option 1 : Simulated Photon Count per Bin & Multiply SNR with Sensitvity
-Reference to this [paper](https://opg.optica.org/oe/fulltext.cfm?uri=oe-25-23-28567&id=376623), SNR turns out to the photon count at the sample arm. Specified here as $N_S$. Simulated photon count sum over all the bins might seem like a good analogous term. However, remember in that in physics, $N \propto Intensity$. Which is not the case for our specific kind of MC simulation. Where we assume each photon has a different intensity(Not the case in real life). Which might make this a bad choice?
 
-Regardless, here are some simulation results ![](figures/heatmap_snr1.png)
-The optima occurs at [6, 127]
-Adding them instead(With the SNR part normalized to 1) ![](figures/heatmap_snr2.png)
-New optima at [0, 127]
-
-
-
-
-## Option 2 : Intensity Sum over The Timebins & Multiply SNR with Sensitvity
-Using the same logic as the section above, $N_S \propto \sum_{L_{min}}^{L_{max}} I(L)$. Using this definition of SNR, if we want to maximize $ Sensitivity \times SNR$, our equation turns into 
-$$
+# Option 1 :  Sensitivity x SNR
+Using our approximate terms for sesntivitiy(relative partial derivative of received intensity wrt fetal concerration or saturation), $Sensitivity \times SNR$ results in the following term
+```math
 \frac{\int I(L) R(L) dL}{\int I(L) dL} \times \int I(L)dL = \int I(L) R(L) dL
-$$
-The original goal of SNR was to pull the optimization window to the left. This, however, pulls it too far. From simulation data, the optimization point for this setup starts at the leftmost window and ends at some point a bit before the last timebin. Too extreme of an effect. 
+```  
+![Heatmap1](figures/heatmap_snr2.png)  
+The optimum window is between indices 0 to 103. This pulls it too far towards the left.
+
+# Option 2 : (Sensitivity / Best Sensitivity) + (SNR / Best SNR)
+Normalizing both terms to be in the same scale and adding. 
+![Heatmap2](figures/heatmap_snr3.png)  
+We actually get two windows. These are between 0 to 73 and at 127 to 127.
+
+# Option 3 : Threshold 
+Beyond some threshold SNR, it does not matter if we increase SNR any more. Setting this to 20% of the max possible SNR : 
+![Heatmap3](figures/heatmap_snr4.png)    
+Optimum window indices 1 to 94   
+Setting it to 80%
+![Heatmap4](figures/heatmap_snr5.png)    
+Optima between 0 to 103  
+Setting it to 5%
+![Heatmap2](figures/heatmap_snr6.png)   
+Optima between 2 to 97
