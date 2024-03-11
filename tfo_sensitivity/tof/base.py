@@ -1,6 +1,7 @@
 """
 Contains the ToF class and all its corresponding functions
 """
+
 from typing import Dict, Optional, Callable
 import pandas as pd
 import numpy as np
@@ -40,7 +41,7 @@ class ToF:
         self.data = temp_data.groupby("ToF_quantized", sort=True)["Intensity"].sum()
         # Remove low intensity bins
         self.photon_count_per_bin = self.photon_count_per_bin.loc[self.data > lower_intensity_bound]
-        self.data = self.data.loc[self.data > lower_intensity_bound]  
+        self.data = self.data.loc[self.data > lower_intensity_bound]
         self.interpolation_needed = False
         self.lower_bin_index = self.data.index.values.min()
         self.upper_bin_index = self.data.index.values.max()
@@ -51,6 +52,9 @@ class ToF:
         """
         Create a ToF object from a given data series. This bypasses the initialization process and directly sets the
         internal data to a give data pandas Series
+        Args:
+            data (pd.Series): The data series to be used as the ToF (Intensity as the values and ToF as the index)
+            time_resolution (float): Time resolution of the ToF (in seconds)
         """
         # remove index name from data - this sometimes causes naming clashes with the "ToF_quantized" column in the
         # __init__ of the ToF class (As data from another ToF would have this name for the index as well)
@@ -89,7 +93,7 @@ class ToF:
             return new_tof
         else:
             return operation(self.data, other)
-    
+
     def __len__(self) -> int:
         return len(self.data)
 

@@ -29,7 +29,8 @@ Using our approximate terms for sesntivitiy(relative partial derivative of recei
 \frac{\int I(L) R(L) dL}{\int I(L) dL} \times \int I(L)dL = \int I(L) R(L) dL
 ```  
 ![Heatmap1](figures/heatmap_snr2.png)  
-The optimum window is between indices 0 to 103. This pulls it too far towards the left.
+The optimum window is between indices 0 to 103. This pulls it too far towards the left.     
+Improvement Ratio 1.0       
 
 # Option 2 : (Sensitivity / Best Sensitivity) + (SNR / Best SNR)
 Normalizing both terms to be in the same scale and adding. 
@@ -40,9 +41,66 @@ We actually get two windows. These are between 0 to 73 and at 127 to 127.
 Beyond some threshold SNR, it does not matter if we increase SNR any more. Setting this to 20% of the max possible SNR : 
 ![Heatmap3](figures/heatmap_snr4.png)    
 Optimum window indices 1 to 94   
+Improvement Ratio 1.4246001324978765        
 Setting it to 80%  
+Improvement Ratio 1.0       
 ![Heatmap4](figures/heatmap_snr5.png)    
 Optima between 0 to 103  
 Setting it to 5%  
 ![Heatmap2](figures/heatmap_snr6.png)   
-Optima between 2 to 97
+Optima between 2 to 97      
+Improvement Ratio 11.259876799373993        
+
+# Option 4 : Specificity 1
+Sensitivity dividied by maternal pathlength (Or in this case, the log(R(L))) term, which is proportional to the maternal pathlength.
+```math
+specificity = \int \frac{I(L) log (R_{fetal}(L))}{log(R_{maternal}(L))} dL
+```     
+Both R's are calculated in a similar fashion. A point where only the maternal feature changes/or only the fetal feature changes.    
+![Heatmap2](figures/heatmap+snr7.png)           
+Optima between 0 95            
+Improvement Ratio 1.0
+
+# Option 4 : Specificity 2
+Define specificity as the ratio between the fetal to maternal sensitivity.
+```math
+specificity_1 = \frac{\int I(L) log(R_{fetal}(L)) dL}{\int I(L)dL} / \frac{\int I(L) log(R_{maternal}(L))dL}{\int I(L)dL} = \frac{\int I(L) log(R_{fetal}(L))dL}{\int I(L) log(R_{maternal}(L))dL}
+```
+![Heatmap2](figures/heatmap_snr8.png)           
+Optima at 122       
+Improvement Ratio 7563.298966665463
+
+# Option 5 : Specificity 3
+Dividing by the exponent of the maternal pathlength
+```math
+specificity = \int \frac{I(L) log (R_{fetal}(L))}{exp(log(R_{maternal}(L)))}
+```     
+![Heatmap2](figures/heatmap_snr9.png)           
+Optima between 0 to 95      
+Improvement Ratio 1.0
+
+
+
+# Option 6 : Specificity x SNR
+Using the specificity definition 2 times SNR as the total photon intensity within those bins.
+![Heatmap2](figures/heatmap_snr10.png)           
+Optima between 0 to 103          
+Improvement Ratio 1.0
+
+
+# Table
+| Option Number | Option Name | Optimum Window Indices | Improvement Ratio |
+|---------------|-------------|------------------------|-------------------|
+| 1             | Sensitivity x SNR | 0 to 103 | 1.0 |
+| 2             | (Sensitivity / Best Sensitivity) + (SNR / Best SNR) | 0 to 73, 127 to 127 | N/A |
+| 3             | Threshold | 1 to 94 (20% threshold), 0 to 103 (80% threshold), 2 to 97 (5% threshold) | 1.4246001324978765 (20% threshold), 1.0 (80% threshold), 11.259876799373993 (5% threshold) |
+| 4             | Specificity 1 | 0 to 95 | 1.0 |
+| 5             | Specificity 2 | 122 | 7563.298966665463 |
+| 6             | Specificity 3 | 0 to 95 | 1.0 |
+| 7             | Specificity x SNR | 0 to 103 | 1.0 |
+
+
+
+
+
+
